@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PE Challenge Arena — Heat Treatment & Material Failure</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;600;700&display=swap');
+:root{
+  --bg:#f4f1eb;--surface:#fff;--surface2:#ede9e0;--border:#d4cfc3;
+  --text:#1c1814;--text2:#4a4238;--text3:#8a8070;
+  --blue:#1a3a5c;--blue2:#2563a8;--blue-light:#e8f0fb;
+  --green:#1a4a2a;--green2:#2e7d4a;--green-light:#e6f4ec;
+  --red:#7a1818;--red2:#c0392b;--red-light:#fdecea;
+  --gold:#b8860b;--gold-light:#fef8e1;
+  --purple:#3d1a6b;--purple2:#7c4dbd;--purple-light:#f0ebfb;
+  --orange:#c05a00;--orange-light:#fff3e6;
+  --dark:#0f1923;--accent:#e8a020;--accent2:#5cc88a;--dim:#8a9aaa;
+  --r:10px;--rl:16px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Crimson Pro',Georgia,serif;background:var(--dark);color:var(--text);font-size:17px;line-height:1.65;min-height:100vh;}
+
+/* HEADER */
+.hdr{background:#060d14;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:500;border-bottom:2px solid var(--accent);}
+.hdr-title{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:#fff;letter-spacing:.06em;}
+.hdr-badge{font-family:'JetBrains Mono',monospace;font-size:.62rem;color:var(--accent);letter-spacing:.1em;border:1px solid var(--accent);padding:3px 8px;border-radius:4px;white-space:nowrap;}
+
+/* SCREENS — all hidden by default, JS shows them */
+#lobby,#quiz,#results{display:none;}
+
+/* ===== LOBBY ===== */
+#lobby{min-height:calc(100vh - 54px);flex-direction:column;align-items:center;justify-content:center;padding:36px 20px;background:linear-gradient(150deg,#0f1923 0%,#1a2a3a 55%,#0f1923 100%);position:relative;overflow:hidden;}
+#lobby::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(232,160,32,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(232,160,32,.07) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;}
+.lb{position:relative;z-index:1;max-width:660px;width:100%;text-align:center;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:clamp(2.8rem,9vw,5.5rem);color:var(--accent);letter-spacing:.08em;line-height:.9;text-shadow:0 0 40px rgba(232,160,32,.4);margin-bottom:6px;}
+.logo-sub{font-family:'JetBrains Mono',monospace;font-size:.7rem;color:var(--dim);letter-spacing:.18em;text-transform:uppercase;margin-bottom:20px;}
+.logo-desc{font-size:.97rem;color:rgba(255,255,255,.7);margin-bottom:32px;line-height:1.7;max-width:520px;margin-left:auto;margin-right:auto;}
+.sec-lbl{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;display:block;}
+
+/* diff cards */
+.dg{display:grid;grid-template-columns:repeat(3,1fr);gap:11px;margin-bottom:26px;}
+.dc{border:2px solid rgba(255,255,255,.12);border-radius:var(--rl);padding:18px 12px;cursor:pointer;transition:all .2s;background:rgba(255,255,255,.04);outline:none;}
+.dc:hover{border-color:rgba(255,255,255,.35);transform:translateY(-2px);}
+.dc.on{background:rgba(232,160,32,.08);}
+.dc.on.f{border-color:var(--accent2);}
+.dc.on.a{border-color:#5aa0e0;}
+.dc.on.e{border-color:var(--red2);}
+.di{font-size:1.6rem;margin-bottom:6px;}
+.dn{font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:.06em;margin-bottom:3px;}
+.f .dn{color:var(--accent2);}.a .dn{color:#5aa0e0;}.e .dn{color:#e07070;}
+.dd{font-size:.74rem;color:var(--dim);line-height:1.45;}
+
+/* topic chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin-bottom:26px;}
+.chip{border:1.5px solid rgba(255,255,255,.18);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);padding:5px 13px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:.68rem;letter-spacing:.04em;cursor:pointer;transition:all .18s;text-transform:uppercase;outline:none;}
+.chip:hover{border-color:var(--accent);color:var(--accent);}
+.chip.on{border-color:var(--accent);color:var(--accent);background:rgba(232,160,32,.1);}
+
+/* round picker */
+.rrow{display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:28px;}
+.rb{width:38px;height:38px;border-radius:50%;border:2px solid rgba(255,255,255,.15);background:rgba(255,255,255,.05);color:rgba(255,255,255,.6);font-family:'JetBrains Mono',monospace;font-size:.82rem;font-weight:700;cursor:pointer;transition:all .18s;outline:none;}
+.rb:hover,.rb.on{border-color:var(--accent);color:var(--accent);background:rgba(232,160,32,.1);}
+.start{background:var(--accent);color:var(--dark);border:none;border-radius:var(--rl);padding:16px 50px;font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:.1em;cursor:pointer;transition:all .2s;box-shadow:0 4px 24px rgba(232,160,32,.4);outline:none;}
+.start:hover{transform:translateY(-2px) scale(1.02);box-shadow:0 8px 32px rgba(232,160,32,.5);}
+
+/* ===== QUIZ ===== */
+#quiz{background:var(--bg);}
+.qtb{background:var(--dark);padding:0 20px;height:50px;display:flex;align-items:center;gap:14px;border-bottom:1px solid rgba(255,255,255,.08);}
+.qi{display:flex;flex-direction:column;align-items:center;}
+.ql{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;}
+.qv{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;color:#fff;letter-spacing:.04em;line-height:1;}
+.qsep{width:1px;height:24px;background:rgba(255,255,255,.1);}
+.spill{display:flex;align-items:center;gap:4px;background:rgba(232,160,32,.15);border:1px solid rgba(232,160,32,.3);border-radius:20px;padding:3px 11px;}
+.spv{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;color:var(--accent);letter-spacing:.04em;}
+.spl{font-family:'JetBrains Mono',monospace;font-size:.56rem;color:var(--dim);text-transform:uppercase;}
+.tw{margin-left:auto;display:flex;align-items:center;}
+.tr{width:38px;height:38px;position:relative;flex-shrink:0;}
+.tr svg{transform:rotate(-90deg);width:38px;height:38px;}
+.tr circle{fill:none;stroke-width:3;}
+.tt{stroke:rgba(255,255,255,.1);}.tf{stroke:var(--accent);stroke-linecap:round;transition:stroke-dashoffset 1s linear;}
+.tn{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:.75rem;font-weight:700;color:#fff;}
+.qb2{background:transparent;border:1px solid rgba(255,255,255,.15);color:rgba(255,255,255,.4);padding:4px 11px;border-radius:5px;font-family:'JetBrains Mono',monospace;font-size:.62rem;cursor:pointer;letter-spacing:.05em;transition:all .18s;outline:none;margin-left:8px;}
+.qb2:hover{border-color:rgba(255,255,255,.4);color:rgba(255,255,255,.8);}
+.pbar{height:4px;background:rgba(0,0,0,.1);}.pfill{height:100%;background:linear-gradient(90deg,var(--accent2),var(--accent));transition:width .4s ease;}
+
+.qbody{max-width:800px;margin:0 auto;padding:28px 18px 80px;}
+.qm{display:flex;align-items:center;gap:11px;margin-bottom:14px;}
+.qbn{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;color:var(--border);line-height:1;}
+.qt2{display:flex;flex-wrap:wrap;gap:5px;}
+.tg{font-family:'JetBrains Mono',monospace;font-size:.6rem;text-transform:uppercase;letter-spacing:.07em;padding:2px 7px;border-radius:9px;font-weight:700;}
+.tg-ht{background:var(--blue-light);color:var(--blue);}
+.tg-fail{background:var(--red-light);color:var(--red);}
+.tg-emb{background:var(--purple-light);color:var(--purple);}
+.tg-hard{background:#fef0e8;color:#7a3500;}
+.tg-grain{background:var(--gold-light);color:var(--gold);}
+.tg-ttt{background:#e8f5fb;color:#1a4a6b;}
+.tg-f{background:var(--green-light);color:var(--green2);}
+.tg-a{background:var(--gold-light);color:var(--gold);}
+.tg-e{background:var(--red-light);color:var(--red2);}
+
+.qctx{background:var(--surface2);border-radius:var(--r);padding:13px 16px;margin-bottom:14px;font-size:.88rem;color:var(--text2);line-height:1.6;border-left:3px solid var(--border);}
+.qcl{font-family:'JetBrains Mono',monospace;font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;color:var(--text3);margin-bottom:4px;}
+.qst{background:var(--surface);border-radius:var(--rl);padding:20px 22px;margin-bottom:16px;border-left:4px solid var(--blue2);box-shadow:0 2px 10px rgba(0,0,0,.07);font-size:1rem;color:var(--text);line-height:1.7;font-weight:600;}
+
+.og{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+.opt{width:100%;text-align:left;background:var(--surface);border:2px solid var(--border);border-radius:var(--rl);padding:13px 16px;font-family:'Crimson Pro',serif;font-size:.93rem;color:var(--text);cursor:pointer;transition:all .15s;display:flex;align-items:flex-start;gap:11px;line-height:1.55;box-shadow:0 1px 5px rgba(0,0,0,.05);outline:none;}
+.opt:hover:not(:disabled){border-color:var(--blue2);background:var(--blue-light);transform:translateX(3px);}
+.ol{font-family:'Bebas Neue',sans-serif;font-size:.95rem;background:var(--surface2);color:var(--text2);width:28px;height:28px;border-radius:6px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .15s;letter-spacing:.04em;}
+.opt:hover:not(:disabled) .ol{background:var(--blue2);color:#fff;}
+.opt.correct{background:var(--green-light);border-color:var(--green2);animation:cpulse .4s ease;}
+.opt.correct .ol{background:var(--green2);color:#fff;}
+.opt.wrong{background:var(--red-light);border-color:var(--red2);animation:wshake .4s ease;}
+.opt.wrong .ol{background:var(--red2);color:#fff;}
+.opt.dimmed{opacity:.4;}
+.opt:disabled{cursor:default;}
+@keyframes cpulse{0%{transform:scale(1)}40%{transform:scale(1.013)}100%{transform:scale(1)}}
+@keyframes wshake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
+
+/* feedback */
+.fb{display:none;margin-top:3px;animation:fup .3s ease;}
+.fb.on{display:block;}
+@keyframes fup{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fbb{display:flex;align-items:center;gap:11px;padding:13px 18px;border-radius:var(--rl) var(--rl) 0 0;}
+.fc{background:var(--green2);}.fw{background:var(--red2);}
+.fbi{font-size:1.4rem;}.fbt{font-family:'Bebas Neue',sans-serif;font-size:1.25rem;color:#fff;letter-spacing:.06em;}
+.fbpts{margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:rgba(255,255,255,.85);}
+.fbd{background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--rl) var(--rl);padding:18px 20px;box-shadow:0 2px 10px rgba(0,0,0,.06);}
+.fbs{margin-bottom:14px;}.fbs:last-child{margin-bottom:0;}
+.fbl{font-family:'JetBrains Mono',monospace;font-size:.6rem;text-transform:uppercase;letter-spacing:.1em;font-weight:700;margin-bottom:4px;}
+.lg{color:var(--green2);}.lr{color:var(--red2);}.lo{color:#c07000;}.lp{color:var(--purple2);}.lb2{color:var(--blue2);}.lt{color:var(--text3);}
+.ft{font-size:.89rem;line-height:1.65;padding:10px 14px;border-radius:var(--r);}
+.ftg{color:var(--green);background:var(--green-light);border-left:3px solid var(--green2);}
+.ftr{color:var(--red);background:var(--red-light);border-left:3px solid var(--red2);}
+.fto{color:var(--orange);background:var(--orange-light);border:1.5px solid #f0a040;}
+.ftp{color:var(--purple);background:var(--purple-light);border-left:3px solid var(--purple2);}
+.ftb{color:var(--blue);background:var(--blue-light);border-left:3px solid var(--blue2);}
+.ftn{color:var(--text2);background:var(--surface2);border-left:3px solid var(--accent);}
+.cf{display:flex;flex-wrap:wrap;align-items:center;gap:5px;margin-top:4px;}
+.cs{background:var(--blue2);color:#fff;padding:2px 10px;border-radius:20px;font-family:'JetBrains Mono',monospace;font-size:.66rem;font-weight:600;}
+.ca{color:var(--blue2);font-size:.9rem;}
+
+.nxt{width:100%;background:var(--dark);color:var(--accent);border:2px solid var(--accent);border-radius:var(--rl);padding:14px;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:.1em;cursor:pointer;transition:all .2s;margin-top:16px;outline:none;}
+.nxt:hover{background:var(--accent);color:var(--dark);}
+.skp{display:block;width:fit-content;margin:9px auto 0;background:transparent;color:var(--text3);border:1px solid var(--border);border-radius:var(--r);padding:6px 16px;font-family:'JetBrains Mono',monospace;font-size:.7rem;cursor:pointer;transition:all .18s;letter-spacing:.04em;outline:none;}
+.skp:hover{border-color:var(--text3);color:var(--text2);}
+
+/* popups */
+.pp{position:fixed;font-family:'Bebas Neue',sans-serif;font-size:1.8rem;pointer-events:none;z-index:1000;animation:ppf .9s ease forwards;letter-spacing:.05em;}
+.pp.pos{color:var(--accent2);}.pp.neg{color:var(--red2);}
+@keyframes ppf{0%{opacity:1;transform:translateY(0) scale(1)}60%{opacity:1;transform:translateY(-36px) scale(1.1)}100%{opacity:0;transform:translateY(-62px) scale(.9)}}
+.tuf{position:fixed;inset:0;background:rgba(192,57,43,.2);z-index:900;pointer-events:none;animation:tufa .5s ease forwards;}
+@keyframes tufa{0%{opacity:1}100%{opacity:0}}
+
+/* ===== RESULTS ===== */
+#results{min-height:calc(100vh - 54px);background:linear-gradient(150deg,#0f1923 0%,#1a2a3a 55%,#0f1923 100%);padding:48px 20px 80px;position:relative;overflow:hidden;}
+#results::before{content:'';position:absolute;inset:0;background-image:linear-gradient(rgba(232,160,32,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(232,160,32,.05) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;}
+.ri{max-width:660px;margin:0 auto;position:relative;z-index:1;text-align:center;}
+.rg{font-family:'Bebas Neue',sans-serif;font-size:clamp(4rem,13vw,7rem);line-height:.9;margin-bottom:6px;letter-spacing:.04em;animation:gr .6s cubic-bezier(.34,1.56,.64,1);}
+@keyframes gr{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
+.gA{color:var(--accent2);text-shadow:0 0 40px rgba(92,200,138,.5);}
+.gB{color:#5aa0e0;text-shadow:0 0 40px rgba(90,160,224,.5);}
+.gC{color:var(--accent);text-shadow:0 0 40px rgba(232,160,32,.5);}
+.gD{color:#e07070;text-shadow:0 0 40px rgba(224,112,112,.5);}
+.gF{color:var(--red2);text-shadow:0 0 40px rgba(192,57,43,.5);}
+.rv{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:#fff;letter-spacing:.1em;margin-bottom:4px;}
+.rs{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--dim);letter-spacing:.07em;margin-bottom:30px;}
+.strow{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:22px;}
+.stb{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:var(--rl);padding:14px 9px;animation:fup .4s ease both;}
+.sv2{font-family:'Bebas Neue',sans-serif;font-size:1.8rem;color:var(--accent);letter-spacing:.04em;line-height:1;margin-bottom:2px;}
+.sl2{font-family:'JetBrains Mono',monospace;font-size:.6rem;color:var(--dim);text-transform:uppercase;letter-spacing:.07em;}
+.brow{display:flex;gap:7px;justify-content:center;margin-bottom:22px;flex-wrap:wrap;animation:fup .4s ease .15s both;}
+.bdg{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:9px;padding:8px 12px;text-align:center;opacity:.3;transition:all .3s;}
+.bdg.on{opacity:1;border-color:var(--accent);}
+.bi{font-size:1.25rem;display:block;margin-bottom:2px;}
+.bl{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;}
+.bdg.on .bl{color:var(--accent);}
+.bds{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:var(--rl);padding:18px;margin-bottom:18px;text-align:left;animation:fup .4s ease .28s both;}
+.bdt{font-family:'Bebas Neue',sans-serif;font-size:.92rem;color:#fff;letter-spacing:.1em;margin-bottom:12px;text-transform:uppercase;}
+.bdr{display:flex;align-items:center;gap:9px;margin-bottom:7px;}
+.bdn{font-family:'JetBrains Mono',monospace;font-size:.65rem;color:rgba(255,255,255,.6);width:120px;flex-shrink:0;text-transform:uppercase;letter-spacing:.04em;}
+.bdtr{flex:1;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;}
+.bdf{height:100%;border-radius:3px;transition:width .8s ease;}
+.bdp{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:rgba(255,255,255,.45);width:32px;text-align:right;flex-shrink:0;}
+.ms{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:var(--rl);padding:18px;margin-bottom:22px;text-align:left;animation:fup .4s ease .38s both;max-height:300px;overflow-y:auto;}
+.ms::-webkit-scrollbar{width:4px;}.ms::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
+.mst{font-family:'Bebas Neue',sans-serif;font-size:.92rem;color:#e07070;letter-spacing:.1em;margin-bottom:11px;}
+.mi{border-bottom:1px solid rgba(255,255,255,.06);padding:10px 0;}.mi:last-child{border-bottom:none;}
+.miq{font-size:.84rem;color:rgba(255,255,255,.65);margin-bottom:2px;line-height:1.5;}
+.miw{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:#e07070;}
+.mia{font-family:'JetBrains Mono',monospace;font-size:.68rem;color:var(--accent2);margin-top:1px;}
+.ract{display:flex;gap:11px;flex-wrap:wrap;justify-content:center;animation:fup .4s ease .48s both;}
+.rbtn{border-radius:var(--rl);padding:12px 24px;font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:.08em;cursor:pointer;transition:all .2s;border:2px solid;outline:none;}
+.rp{background:var(--accent);color:var(--dark);border-color:var(--accent);}
+.rp:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(232,160,32,.4);}
+.rs2{background:transparent;color:rgba(255,255,255,.65);border-color:rgba(255,255,255,.2);}
+.rs2:hover{border-color:rgba(255,255,255,.5);color:#fff;}
+
+/* footer */
+footer{text-align:center;padding:24px;font-family:'JetBrains Mono',monospace;font-size:.68rem;color:rgba(255,255,255,.25);background:#060d14;border-top:1px solid rgba(255,255,255,.06);}
+footer strong{color:rgba(255,255,255,.4);}
+
+@media(max-width:560px){
+  .dg{grid-template-columns:1fr;}.strow{grid-template-columns:repeat(2,1fr);}
+  .qtb{padding:0 10px;gap:8px;}.qbody{padding:18px 11px 60px;}
+  .hdr{padding:0 12px;}.hdr-title{font-size:.8rem;}
+}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <span class="hdr-title">PE Mechanical — Heat Treatment &amp; Material Failure Deep Mastery Lab</span>
+  <span class="hdr-badge">SEGMENT 3 · CHALLENGE ARENA</span>
+</header>
+
+<!-- LOBBY -->
+<div id="lobby">
+  <div class="lb">
+    <div class="logo">PE CHALLENGE<br>ARENA</div>
+    <div class="logo-sub">Section 11 · Heat Treatment &amp; Material Failure</div>
+    <p class="logo-desc">Timed, randomized, ruthless. Engineering judgment demanded — not recognition. Every option sounds plausible. Only one is most defensible. Full diagnostic feedback after every answer.</p>
+
+    <span class="sec-lbl">Select Difficulty</span>
+    <div class="dg">
+      <div class="dc f on" id="df" onclick="setDiff('f',this)"><div class="di">🔩</div><div class="dn">Foundation</div><div class="dd">90 sec · Core application<br>+45 pts correct</div></div>
+      <div class="dc a"    id="da" onclick="setDiff('a',this)"><div class="di">⚙️</div><div class="dn">Analysis</div><div class="dd">75 sec · Multi-step reasoning<br>+75 pts correct</div></div>
+      <div class="dc e"    id="de" onclick="setDiff('e',this)"><div class="di">🔥</div><div class="dn">Expert</div><div class="dd">60 sec · Failure diagnosis<br>+120 pts correct</div></div>
+    </div>
+
+    <span class="sec-lbl">Filter by Topic</span>
+    <div class="chips">
+      <button class="chip on" onclick="setTopic('all',this)">All Topics</button>
+      <button class="chip"    onclick="setTopic('ht',this)">Heat Treatment</button>
+      <button class="chip"    onclick="setTopic('fail',this)">Failure Analysis</button>
+      <button class="chip"    onclick="setTopic('emb',this)">Embrittlement</button>
+      <button class="chip"    onclick="setTopic('hard',this)">Hardenability</button>
+      <button class="chip"    onclick="setTopic('ttt',this)">TTT / CCT</button>
+      <button class="chip"    onclick="setTopic('grain',this)">Grain &amp; Toughness</button>
+    </div>
+
+    <div class="rrow">
+      <span class="sec-lbl" style="margin:0">Questions:</span>
+      <button class="rb on" onclick="setN(5,this)">5</button>
+      <button class="rb"    onclick="setN(10,this)">10</button>
+      <button class="rb"    onclick="setN(15,this)">15</button>
+      <button class="rb"    onclick="setN(20,this)">20</button>
+    </div>
+    <button class="start" onclick="startArena()">ENTER THE ARENA</button>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz">
+  <div class="qtb">
+    <div class="qi"><span class="ql">Question</span><span class="qv" id="qnum">1/5</span></div>
+    <div class="qsep"></div>
+    <div class="qi"><span class="ql">Score</span><span class="qv" id="qscore">0</span></div>
+    <div class="qsep"></div>
+    <div class="spill"><span style="font-size:.85rem">🔥</span><span class="spv" id="qstreak">0</span><span class="spl">streak</span></div>
+    <div class="tw">
+      <div class="tr">
+        <svg viewBox="0 0 38 38"><circle class="tt" cx="19" cy="19" r="16"/><circle class="tf" id="tcirc" cx="19" cy="19" r="16" stroke-dasharray="100.5" stroke-dashoffset="0"/></svg>
+        <div class="tn" id="tnum">90</div>
+      </div>
+    </div>
+    <button class="qb2" onclick="goLobby()">QUIT</button>
+  </div>
+  <div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div>
+  <div class="qbody">
+    <div class="qm"><div class="qbn" id="qbig">01</div><div class="qt2" id="qtags"></div></div>
+    <div class="qctx" id="qctx"><div class="qcl">Context</div><div id="qctxt"></div></div>
+    <div class="qst" id="qstem"></div>
+    <div class="og" id="opts"></div>
+    <div class="fb" id="fbp"></div>
+    <button class="nxt" id="nxtbtn" style="display:none" onclick="nextQ()">NEXT QUESTION →</button>
+    <button class="skp" id="skpbtn" onclick="skipQ()">skip question</button>
+  </div>
+</div>
+
+<!-- RESULTS -->
+<div id="results">
+  <div class="ri">
+    <div class="rg gA" id="rgrade">A</div>
+    <div class="rv"    id="rverdict">PE-READY PERFORMANCE</div>
+    <div class="rs"    id="rsub">12/15 Correct</div>
+    <div class="strow" id="strow"></div>
+    <div class="brow"  id="brow"></div>
+    <div class="bds"><div class="bdt">Performance by Topic</div><div id="bdrows"></div></div>
+    <div class="ms" id="mssec" style="display:none"><div class="mst">⚠ Questions to Review</div><div id="mslist"></div></div>
+    <div class="ract">
+      <button class="rbtn rp"  onclick="retryMissed()">RETRY MISSED</button>
+      <button class="rbtn rp"  onclick="startArena()">NEW ROUND</button>
+      <button class="rbtn rs2" onclick="goLobby()">BACK TO LOBBY</button>
+    </div>
+  </div>
+</div>
+
+<footer>PE Mechanical Heat Treatment &amp; Material Failure Deep Mastery Lab &nbsp;·&nbsp; Segment 3 · PE Challenge Arena &nbsp;·&nbsp; Designed and Curriculum Developed by <strong>Hilary Homaii</strong></footer>
+
+<script>
+/* ================================================================
+   QUESTION BANK — 20 questions, all topics & difficulty levels
+   ================================================================ */
+const BANK=[
+{id:'ht1',t:'ht',d:'f',pts:45,sec:90,
+ tags:['Heat Treatment','Foundation'],
+ ctx:'A machinist must rough-machine AISI 1095 (0.95%C) before final hardening. As-received stock is ~220 HB, causing excessive tool wear.',
+ stem:'Which pre-machining heat treatment produces the lowest hardness and best machinability in this high-carbon steel?',
+ opts:[
+  {l:'A',x:'Full anneal — heat above Ac3, slow furnace cool'},
+  {l:'B',x:'Normalizing — heat above Ac3, air cool'},
+  {l:'C',x:'Spheroidizing — cycle near Ac1 to form globular carbides in ferrite matrix',c:1},
+  {l:'D',x:'Stress relieving — heat below Ac1, slow cool'}],
+ rat:'Spheroidizing converts lamellar cementite into globular carbides in a soft ferrite matrix — the softest achievable microstructure for high-carbon steel (~160–170 HB). Full annealing gives coarse lamellar pearlite (~195 HB), still harder. Normalizing gives fine pearlite — actually the hardest option. Stress relieving does not change carbide morphology.',
+ clue:'High-carbon steel + maximum machinability = spheroidizing. Globular carbides in soft ferrite cut far more easily than lamellar pearlite plates.',
+ trap:'"Full anneal = softest" is true for LOW-carbon steel but NOT for high-carbon steel. For ≥0.6%C, spheroidite is softer than fully-annealed coarse pearlite. This ranking reversal is the PE trap.',
+ chain:['1095 high-C steel','Spheroidize near Ac1','Globular carbides in ferrite','~165 HB','Best machinability'],
+ lens:'The test writer specifies a high-carbon steel to exploit the common misconception that full anneal always gives maximum softness. Carbon content reverses the ranking.',
+ think:'High-carbon steel + machinability = spheroidizing. Not full anneal.'},
+
+{id:'ht2',t:'ht',d:'a',pts:75,sec:75,
+ tags:['Heat Treatment','Distortion','Analysis'],
+ ctx:'A 4340 alloy steel shaft (60 mm dia, L/D=12) requires 50+ HRC and ±0.08 mm straightness after heat treatment. Post-treatment grinding is not feasible.',
+ stem:'Which quench method best achieves full martensitic hardness while minimizing distortion for this high-hardenability shaft?',
+ opts:[
+  {l:'A',x:'Water quench — maximizes cooling rate and hardness'},
+  {l:'B',x:'Austempering — isothermal hold for bainite transformation, then air cool'},
+  {l:'C',x:'Martempering — quench to just above Ms, equalize temperature, then air cool',c:1},
+  {l:'D',x:'Oil quench, then immediately straighten while the part is warm'}],
+ rat:'Martempering quenches into a bath held just above Ms (~200°C for 4340), holds until the cross-section equalizes, then air cools. All sections transform simultaneously → uniform volumetric expansion → minimal distortion. 4340\'s high hardenability means the initial fast quench bypasses the pearlite/bainite nose → full martensite still achieved (~54 HRC). Water quench gives martensite but severe distortion. Austempering gives bainite (~48 HRC), failing the 50+ HRC spec. Straightening brittle martensite cracks it.',
+ clue:'Martensite required + no distortion + high-hardenability steel = martempering. Simultaneous transformation eliminates differential expansion.',
+ trap:'Students confuse austempering and martempering. MARTEMPERING → martensite. AUSTEMPERING → bainite. The 50+ HRC spec rules out austempering.',
+ chain:['Asymmetric cooling → differential expansion → distortion','Martempering equalizes T before transformation','Simultaneous section-wide transformation','Low distortion + full martensite (50+ HRC)'],
+ lens:'The distortion constraint and hardness spec together point uniquely to martempering. The austempering/martempering confusion is the designed trap.',
+ think:'Martensite + no distortion + high-hardenability = martempering. Not austempering (bainite).'},
+
+{id:'ht3',t:'ht',d:'e',pts:120,sec:60,
+ tags:['Heat Treatment','Surface Hardening','Expert'],
+ ctx:'Precision broached gear (4140 steel, pre-hardened core 30 HRC): surface hardness ≥65 HRC needed, case depth 0.2 mm, dimensional change <0.003 mm after surface treatment. Post-treatment grinding impossible.',
+ stem:'Which surface hardening process satisfies all three constraints simultaneously?',
+ opts:[
+  {l:'A',x:'Gas carburizing at 920°C followed by direct oil quench'},
+  {l:'B',x:'Carbonitriding at 850°C followed by oil quench'},
+  {l:'C',x:'Gas nitriding at 510–540°C — no quench required',c:1},
+  {l:'D',x:'Induction hardening with precision coil design'}],
+ rat:'Nitriding operates at 480–580°C — below Ac1 — so NO phase transformation and NO quench. Distortion typically <0.002 mm. On 4140 (Cr-Mo), nitrogen forms extremely hard Cr and Mo nitride precipitates → surface hardness 65–72 HRC. Case depth 0.2–0.3 mm standard. All three constraints met. Carburizing (A) and carbonitriding (B) both require a quench → violates dimensional constraint. Induction (D) cannot deliver uniform shallow coverage on complex gear teeth.',
+ clue:'<0.003 mm distortion → no quench → process must stay below Ac1. Only nitriding qualifies. Work backward from the constraint.',
+ trap:'Carbonitriding sounds like nitriding but operates at 850°C above Ac1 and REQUIRES a quench. This is the most common wrong choice.',
+ chain:['<0.003 mm tolerance','No quench → must be below Ac1','Nitriding 480–580°C','Cr/Mo nitrides → 65–72 HRC','<0.002 mm distortion'],
+ lens:'Constraint-elimination logic: what process avoids a quench? Only nitriding. This is PE engineering judgment — work from constraint to process.',
+ think:'Tight tolerance + no grinding + complex geometry → no quench → only nitriding.'},
+
+{id:'ht4',t:'ht',d:'f',pts:45,sec:90,
+ tags:['Heat Treatment','Grain Refinement','Foundation'],
+ ctx:'An as-cast 1040 steel has coarse, heterogeneous grain structure. The engineer must improve toughness and produce uniform properties before service.',
+ stem:'Which heat treatment most effectively refines grain size in this medium-carbon steel casting?',
+ opts:[
+  {l:'A',x:'Spheroidizing anneal near Ac1'},
+  {l:'B',x:'Full anneal — heat above Ac3, slow furnace cool'},
+  {l:'C',x:'Normalizing — heat above Ac3, air cool',c:1},
+  {l:'D',x:'Stress relieving below Ac1'}],
+ rat:'Normalizing heats above Ac3 (full austenitization), allowing complete re-grain nucleation. Air cooling produces fine equiaxed grains. Full annealing also re-austenitizes, but slow furnace cooling allows grain growth → coarser grain than normalizing. Stress relieving and spheroidizing never fully austenitize so cannot refine the as-cast structure.',
+ clue:'Grain refinement = normalizing. Both normalize and anneal re-austenitize, but normalize air-cools (faster = finer grain) while anneal furnace-cools (slower = coarser grain).',
+ trap:'"Anneal = improve properties" makes full anneal tempting. For grain REFINEMENT, normalizing gives finer grain due to faster air cooling.',
+ chain:['As-cast coarse grain','Normalize above Ac3','Full re-austenitization','Air cool → fine equiaxed nuclei','Fine pearlite + ferrite','Improved toughness'],
+ lens:'Normalizing vs. annealing: cooling rate determines final grain size. Faster (air) = finer. Slower (furnace) = coarser.',
+ think:'Grain refinement = normalizing (air cool, finer grain). Full anneal produces coarser grain.'},
+
+{id:'ht5',t:'ht',d:'a',pts:75,sec:75,
+ tags:['Heat Treatment','PWHT','Analysis'],
+ ctx:'A 4130 Cr-Mo weld joint needs post-weld heat treatment. Goal: reduce residual welding stresses while preserving weld zone toughness and microstructure.',
+ stem:'Which PWHT best achieves the stated goal with minimum disruption to the weld microstructure?',
+ opts:[
+  {l:'A',x:'Normalize + temper at 870°C / air cool / 600°C — refines grain throughout weld zone'},
+  {l:'B',x:'Stress relief at 620°C — relaxes residual stress without crossing Ac1',c:1},
+  {l:'C',x:'Full anneal — eliminates all residual stresses and maximizes softness'},
+  {l:'D',x:'Water quench from 870°C — maximizes weld zone hardness'}],
+ rat:'Stress relief at 595–650°C relaxes residual stresses through creep without crossing Ac1 — no phase transformation, microstructure preserved, toughness maintained. Normalizing (870°C) re-austenitizes the entire weld zone and HAZ; the complex multi-pass microstructure re-transforms unpredictably. For residual stress reduction only, stress relief is the minimum targeted intervention. Full anneal sacrifices strength. Water quench worsens residual stress.',
+ clue:'Goal = residual stress reduction, no microstructure disruption. Stress relief is below Ac1 → no transformation → microstructure preserved.',
+ trap:'Normalizing does more — but "more" disrupts the weld microstructure unpredictably. PE rewards minimum necessary intervention for the stated goal.',
+ chain:['Residual weld stress','Stress relief <Ac1','No transformation','Creep relaxation → stress reduction','Microstructure + toughness preserved'],
+ lens:'PE questions often reward the minimum targeted intervention that achieves the stated goal — not the most aggressive treatment.',
+ think:'Residual stress only → stress relief (below Ac1). Reserve normalizing for grain refinement objectives.'},
+
+{id:'hd1',t:'hard',d:'a',pts:75,sec:75,
+ tags:['Hardenability','Analysis'],
+ ctx:'75 mm diameter 1045 shaft, oil quenched: surface 57 HRC, core 24 HRC. Required: 45 HRC throughout. Brine quench trial: surface 60, core 27 HRC — but 28% cracking rate.',
+ stem:'What is the most accurate diagnosis and correct corrective action?',
+ opts:[
+  {l:'A',x:'Quench not aggressive enough — use ice-water agitated quench'},
+  {l:'B',x:'Austenitizing temperature too low — raise by 30°C to dissolve more carbides'},
+  {l:'C',x:'Steel has inadequate hardenability for this section size — switch to 4140 alloy steel',c:1},
+  {l:'D',x:'Use martempering to equalize temperature and allow full core hardening'}],
+ rat:'The brine trial is the diagnostic key: moving from oil to brine gained only 3 HRC at the core while causing 28% cracking — signature of hitting the hardenability ceiling. Plain-carbon 1045 has its TTT nose close to the y-axis; even the most aggressive quench cannot cool the 75 mm core fast enough to bypass it. Alloy additions in 4140 (Cr+Mo) shift the TTT nose far right, enabling core hardening with oil quench. Martempering reduces distortion but cannot add hardenability.',
+ clue:'Brine gave only 3 HRC more at core + 28% cracking → hardenability limit reached. More quench severity cannot overcome TTT kinetics. Must change the alloy.',
+ trap:'Martempering sounds like it addresses core hardening. But martempering reduces distortion — it cannot increase hardenability. If the core\'s cooling rate intersects the TTT nose, no interrupted quench fixes it.',
+ chain:['1045: TTT nose close to y-axis','Core cools too slowly in any quench','Nose always intersected → pearlite/bainite','Soft core regardless of quench medium','Switch to 4140 — Cr+Mo shifts TTT nose right'],
+ lens:'The brine trial was seeded as diagnostic evidence. "More severe quench = marginal gain + new damage" IS the diagnosis of a hardenability limit.',
+ think:'Soft core + more severe quench barely helps → hardenability problem → switch to 4140.'},
+
+{id:'hd2',t:'ttt',d:'a',pts:75,sec:75,
+ tags:['TTT/CCT','Hardenability','Analysis'],
+ ctx:'CCT diagram shows: cooling rate >30°C/s → martensite; 5–30°C/s → mixed bainite/martensite; <5°C/s → pearlite. A 50 mm diameter bar is oil quenched: surface cooling rate = 35°C/s, core cooling rate = 8°C/s.',
+ stem:'Which statement correctly predicts the cross-sectional microstructure after oil quenching?',
+ opts:[
+  {l:'A',x:'Fully martensitic — oil quench always produces martensite in alloy steel'},
+  {l:'B',x:'Surface: martensite. Core: fully pearlitic — core cooled too slowly'},
+  {l:'C',x:'Surface: martensite. Core: mixed bainite/martensite — core is in the intermediate range',c:1},
+  {l:'D',x:'Fully bainitic — oil bath temperature drives isothermal transformation'}],
+ rat:'Direct application of CCT data: surface 35°C/s > 30 → martensite. Core 8°C/s falls in 5–30 range → mixed bainite/martensite. Pearlite requires <5°C/s which the core did not reach. Answer D confuses continuous cooling (CCT) with isothermal holding (TTT). Oil quench is continuous cooling — you cannot get fully bainitic structure without an isothermal hold.',
+ clue:'Map each cooling rate to the CCT zone. Surface: 35 > 30 → martensite. Core: 8 is in 5–30 → mixed. Not pearlitic (needs <5°C/s).',
+ trap:'D (fully bainitic) confuses CCT with TTT. Oil quench is continuous cooling, not an isothermal hold. Bainite from isothermal hold requires holding at fixed temperature.',
+ chain:['CCT: >30=M, 5–30=mixed B/M, <5=P','Surface 35°C/s > 30 → martensite','Core 8°C/s in 5–30 → mixed bainite/martensite','Different cooling rates = different microstructures across section'],
+ lens:'Map cooling rate → CCT zone for each position. Surface and core have different rates → different microstructures. This is the foundation of hardenability analysis.',
+ think:'Map each cooling rate to the CCT zone. Surface and core are different → different microstructures.'},
+
+{id:'hd3',t:'ttt',d:'e',pts:120,sec:60,
+ tags:['TTT/CCT','Expert'],
+ ctx:'Engineer A: direct oil quench 4340. Engineer B: martempering (quench to 230°C, hold 20 min, air cool). Engineer C: austempering (quench to 320°C, hold 4 hr, air cool).',
+ stem:'Which statement correctly compares final hardness, microstructure, and distortion for all three methods on 4340?',
+ opts:[
+  {l:'A',x:'All three produce identical martensite — quench method only affects residual stress'},
+  {l:'B',x:'Oil: ~54 HRC martensite, highest distortion. Martemper: ~54 HRC martensite, lowest distortion. Austemper: ~48 HRC bainite, moderate distortion',c:1},
+  {l:'C',x:'Austempering produces higher hardness than martempering due to the longer hold time'},
+  {l:'D',x:'Martempering produces bainite; austempering produces martensite'}],
+ rat:'Oil quench → full martensite (~54 HRC) but outside-in transformation → high distortion. Martempering → quench to just above Ms → equalize → air cool → same martensite (~54 HRC) but simultaneous transformation → much lower distortion. Austempering → hold until bainite complete → lower bainite (~48 HRC) → lower hardness but excellent toughness, minimal distortion. Longer hold in austempering ensures COMPLETE bainite transformation, not higher hardness.',
+ clue:'Martempering = martensite, same hardness as oil quench, lower distortion. Austempering = bainite, lower hardness. Both reduce distortion but through different mechanisms to different microstructures.',
+ trap:'"Longer hold = more hardness" is wrong. Hold time ensures complete bainite transformation. Hardness is determined by the structure type (bainite ~48, martensite ~54), not hold duration.',
+ chain:['Oil quench → martensite + high distortion','Martempering → martensite + low distortion','Austempering → bainite + low distortion','Different structures → different hardness'],
+ lens:'Three-way comparison testing which process gives which structure. Austempering/martempering confusion is the central PE trap.',
+ think:'Martempering = martensite at lower distortion. Austempering = bainite at lower hardness. Never confuse the two.'},
+
+{id:'f1',t:'fail',d:'e',pts:120,sec:60,
+ tags:['Failure Analysis','Fatigue','Expert'],
+ ctx:'Rotating 4340 shaft (55 HRC) fails after 800,000 cycles. Fracture surface shows concentric arc marks progressing from a small origin at a surface scratch. Final fast-fracture zone = ~25% of cross-section.',
+ stem:'Which failure mechanism produced these features, and which single change most extends service life?',
+ opts:[
+  {l:'A',x:'Brittle fracture from overload — applied stress exceeded UTS momentarily'},
+  {l:'B',x:'Creep under sustained load — grain boundary cavitation at elevated temperature'},
+  {l:'C',x:'Fatigue — crack nucleated at surface scratch, propagated via beach marks, then fast fractured; eliminate defects and shot peen',c:1},
+  {l:'D',x:'Hydrogen embrittlement — switch to stainless steel'}],
+ rat:'Beach marks (macroscopic concentric arcs) are the definitive signature of fatigue crack propagation — each arc represents the crack front position at a stress reversal. Origin at surface scratch = fatigue nucleation at a stress concentrator. Small fast-fracture zone (25%) confirms slow crack propagation through 75% of section before unstable final fracture. Mitigation: eliminate surface scratches (reduce Kt) and shot peen to introduce compressive residual stresses that resist surface crack opening.',
+ clue:'Beach marks + surface origin + small fast-fracture zone = fatigue. Always. No other mechanism produces beach marks.',
+ trap:'Answer A (overload) is tempting because the fast-fracture zone is crystalline. But overload gives a LARGE fast-fracture zone and NO progressive marks. The beach marks definitively rule out overload.',
+ chain:['Surface scratch → stress concentrator','Cyclic loading → fatigue nucleation','Crack propagation → beach marks','~75% fatigue propagation / 25% fast fracture','Final fracture at critical crack size'],
+ lens:'Beach marks are the PE test writer\'s clearest fatigue clue. If beach marks are present → fatigue. Period.',
+ think:'Beach marks + surface origin + small fast-fracture zone = fatigue. Shot peen + eliminate surface defects = mitigation.'},
+
+{id:'f2',t:'fail',d:'a',pts:75,sec:75,
+ tags:['Failure Analysis','Fracture Mechanics','Analysis'],
+ ctx:'Gray cast iron pump housing fractures in service. Fracture surface: flat, perpendicular to loading axis, no plastic deformation, no shear lip, coarse crystalline texture. Applied stress at failure = 42% of nominal UTS.',
+ stem:'Which failure mechanism best explains this fracture, and what is the most likely contributing factor?',
+ opts:[
+  {l:'A',x:'Ductile fracture — plastic overload caused microvoid coalescence'},
+  {l:'B',x:'Fatigue — cyclic loading caused progressive crack growth'},
+  {l:'C',x:'Brittle fracture — likely initiated from a casting defect at stress well below nominal UTS',c:1},
+  {l:'D',x:'Creep fracture — elevated temperature caused grain boundary cavitation'}],
+ rat:'Brittle fracture: flat fracture perpendicular to tensile stress, no plastic deformation, coarse crystalline cleavage facets, failure at 42% UTS. Gray cast iron has graphite flakes acting as extreme internal stress concentrators. A casting defect (porosity, inclusion) further concentrates stress locally until K_I exceeds KIc. Failure at 42% nominal UTS confirms a pre-existing defect amplifying local stress far above nominal level. No cyclic loading → not fatigue. No elevated temperature → not creep.',
+ clue:'Flat + no plastic deformation + no beach marks + crystalline + failure below UTS = brittle fracture from pre-existing defect elevating local stress above KIc.',
+ trap:'"Ductile fracture" fails because ductile fracture requires macroscopic plastic deformation — necking and shear lip. "No shear lip" explicitly rules out ductile fracture.',
+ chain:['Brittle material + casting defect','High local K_I from stress concentrator','K_I > KIc → cleavage fracture','Flat face, no plasticity, crystalline','Nominal stress well below UTS'],
+ lens:'Fracture surface morphology identification: flat + no necking + crystalline = brittle. Add failure below UTS → pre-existing crack or severe defect.',
+ think:'No necking + no shear lip + flat crystalline = brittle. Below UTS → pre-existing defect.'},
+
+{id:'f3',t:'fail',d:'e',pts:120,sec:60,
+ tags:['Failure Analysis','Fatigue','Stress Concentration','Expert'],
+ ctx:'Steel connecting rod: UTS = 900 MPa, Se (lab, polished, unnotched) = 450 MPa. Nominal σa = 320 MPa, mean stress σm = 150 MPa tensile. Machined keyway at failure origin: Kf = 2.6.',
+ stem:'Why did fatigue failure occur even though nominal stress amplitude (320 MPa) appears to be below Se (450 MPa)?',
+ opts:[
+  {l:'A',x:'Local stress amplitude at the notch = 320 × 2.6 = 832 MPa >> Se; Goodman correction further reduces allowable',c:1},
+  {l:'B',x:'Mean stress is compressive and reduces effective stress amplitude below Se'},
+  {l:'C',x:'Creep at 150 MPa mean stress caused subcritical crack growth'},
+  {l:'D',x:'Se was incorrectly determined — lab specimens are not representative'}],
+ rat:'Critical calculation: local σa = 320 × Kf = 320 × 2.6 = 832 MPa >> Se (450 MPa). Se applies to unnotched polished specimens. In a notched component, LOCAL stress governs fatigue. Goodman correction: Se_eff = Se × (1 − σm/UTS) = 450 × (1 − 150/900) = 375 MPa. Local amplitude (832 MPa) >> 375 MPa. The fundamental error was comparing nominal stress to unmodified Se without accounting for Kf.',
+ clue:'Local stress = nominal × Kf. Always. 320 appears safe vs Se. 320 × 2.6 = 832 is catastrophically unsafe.',
+ trap:'The question gives nominal stress below Se — specifically designed to look safe. The Kf is the embedded trap. Never compare nominal stress to Se in a notched component.',
+ chain:['Nominal σa = 320 < Se = 450 (appears safe)','Kf = 2.6 at keyway','Local σa = 320 × 2.6 = 832 >> Se','Goodman further reduces allowable with mean stress','Failure at notch root'],
+ lens:'Classic PE trap: give nominal stress below Se, include a Kf, see if the student computes local stress. Se is useless without accounting for the notch.',
+ think:'Always: local σ = nominal × Kf → compare local to Se. Not nominal to Se.'},
+
+{id:'f4',t:'fail',d:'f',pts:45,sec:90,
+ tags:['Failure Analysis','DBTT','Foundation'],
+ ctx:'1045 normalized steel bracket passes all room-temperature tensile tests (Fy = 420 MPa, 17% elongation) but fractures brittlely in service at −35°C under 55% of yield load.',
+ stem:'What is the correct explanation, and what is the most important design lesson?',
+ opts:[
+  {l:'A',x:'The yield strength was exceeded — stress calculations were wrong'},
+  {l:'B',x:'Hydrogen embrittlement from a surface treatment — bake before service'},
+  {l:'C',x:'Service temperature is below the DBTT of this BCC steel; room-temperature tensile tests cannot qualify cold-service toughness',c:1},
+  {l:'D',x:'Normalizing was incorrect — should have used full anneal for better ductility'}],
+ rat:'BCC steels (ferritic/pearlitic carbon steel) have a ductile-to-brittle transition temperature (DBTT). Above DBTT: ductile failure. Below DBTT: brittle cleavage — sudden, low-energy, no macroscopic deformation. Room-temperature tensile tests are conducted above the DBTT and cannot detect this transition. Cold-service qualification requires Charpy V-notch impact testing AT service temperature. This failure resulted from specifying using only room-temperature data without verifying low-temperature toughness.',
+ clue:'Brittle fracture below yield in normally ductile BCC steel at low temperature = service temperature below DBTT. Room-temperature tests are irrelevant for cold-service qualification.',
+ trap:'Answer A (wrong calculations) is the reflex when a part fails below yield. But brittle morphology + low temperature = DBTT, not calculation error.',
+ chain:['1045 BCC steel: has DBTT','−35°C service below DBTT','Cleavage fracture mode','No plastic deformation','Room-T tests passed — DBTT not verified'],
+ lens:'The test writer gave passing room-T data to simulate a common engineering oversight. Room-temperature data cannot predict cold-service toughness for BCC steels.',
+ think:'Brittle fracture in normally ductile BCC steel at low T = below DBTT. Always verify Charpy toughness at service temperature for cold-climate BCC applications.'},
+
+{id:'e1',t:'emb',d:'e',pts:120,sec:60,
+ tags:['Embrittlement','Hydrogen','Expert'],
+ ctx:'Grade 10.9 bolt (UTS = 1040 MPa) electroplated with zinc in acid bath, stored 48 hours, then torqued to 70% proof load during installation. Bolt fractures. Fracture surface: intergranular, no macroscopic plasticity.',
+ stem:'Which mechanism caused this failure, and which preventive step was omitted?',
+ opts:[
+  {l:'A',x:'Temper embrittlement from zinc plating thermal cycle — re-temper at 250°C'},
+  {l:'B',x:'Stress corrosion cracking from zinc + acid environment during plating'},
+  {l:'C',x:'Hydrogen embrittlement from acid plating; baking at 190–210°C within 4 hours of plating was omitted',c:1},
+  {l:'D',x:'Liquid metal embrittlement from contact with molten zinc during hot-dip galvanizing'}],
+ rat:'Acid electroplating generates atomic hydrogen via cathodic reactions. High-strength steels (>1000 MPa) trap hydrogen at grain boundaries. The 48-hour storage allowed hydrogen to diffuse to critical sites. On torquing, concentrated hydrogen reduced grain boundary cohesive energy → intergranular fracture at 70% proof load. Omitted step: baking at 190–210°C for 8–24 hours WITHIN 4 hours of plating drives hydrogen out before reaching critical concentration. Temper embrittlement involves impurity segregation at specific temperatures, not plating. SCC requires sustained corrosive exposure DURING loading. LME requires contact with liquid metal.',
+ clue:'Acid plating + high-strength steel + intergranular fracture + installation failure = hydrogen embrittlement. Baking within 4 hours of plating is the mandated mitigation.',
+ trap:'Answer B (SCC) is tempting because acid is mentioned. Key distinction: SCC requires sustained corrosive exposure DURING loading. HE is introduced DURING PLATING — before service. Different mechanism, different timing.',
+ chain:['Acid plating → H₂ at cathode → H absorbed','High-strength steel: H trapped at grain boundaries','48 hr delay → H reaches critical concentration','Torque load → intergranular brittle fracture','Fix: bake within 4 hours of plating'],
+ lens:'The acid bath is a deliberate SCC distractor. Recognizing acid plating introduces hydrogen (not just a corrosive environment) is the PE-level distinction.',
+ think:'Acid plating + high-strength steel + intergranular + installation failure → hydrogen embrittlement. Bake within 4 hours.'},
+
+{id:'e2',t:'emb',d:'a',pts:75,sec:75,
+ tags:['Embrittlement','Temper','Analysis'],
+ ctx:'4340 quenched and tempered to 50 HRC. Accidentally tempered a second time at 500°C. New hardness: 38 HRC. Charpy impact drops from 85 J to 18 J at room temperature.',
+ stem:'Which mechanism explains the dramatic toughness loss at 500°C, despite only moderate hardness reduction?',
+ opts:[
+  {l:'A',x:'Over-tempering softened the martensite — toughness scales proportionally with hardness'},
+  {l:'B',x:'Temper embrittlement — tramp impurities (P, Sb, Sn) segregated to prior austenite grain boundaries in the 450–565°C zone',c:1},
+  {l:'C',x:'Sensitization from chromium carbide precipitation at grain boundaries'},
+  {l:'D',x:'475°C embrittlement from spinodal decomposition of the ferrite phase'}],
+ rat:'Temper embrittlement in low-alloy steels occurs specifically in the 450–565°C range. Tramp impurities (P, Sb, Sn) segregate to prior austenite grain boundaries, reducing cohesive energy. Dramatic toughness loss (85→18 J) while hardness drops only moderately (50→38 HRC) — the ASYMMETRIC degradation is the signature. Sensitization (C) occurs in stainless steel from Cr₂₃C₆ precipitation. 475°C embrittlement (D) is EXCLUSIVELY for high-chromium ferritic/duplex stainless steels (>12% Cr). 4340 has only ~1% Cr.',
+ clue:'4340 + 500°C + toughness collapses while hardness drops moderately = temper embrittlement. The asymmetric degradation is the signature.',
+ trap:'Answer D (475°C embrittlement) — same temperature range — is wrong because it is exclusively for HIGH-Cr ferritic/duplex stainless steel. 4340 is a low-alloy steel with ~1% Cr. Completely different material class.',
+ chain:['500°C = temper embrittlement zone (450–565°C)','P/Sb/Sn segregate to grain boundaries','Grain boundary cohesion reduced','Toughness: 85→18 J (collapse)','Hardness: 50→38 HRC (moderate)','Asymmetric = embrittlement signature'],
+ lens:'The asymmetric degradation — toughness collapses much more than hardness decreases — is the diagnostic key that separates embrittlement from simple over-tempering.',
+ think:'Toughness dropped far more than hardness → not just over-tempering → embrittlement. 450–565°C in alloy steel = temper embrittlement.'},
+
+{id:'e3',t:'emb',d:'e',pts:120,sec:60,
+ tags:['Embrittlement','SCC','Expert'],
+ ctx:'316L austenitic SS heat exchanger tube at 90°C, 350 ppm chloride cooling water. After 14 months: fine, branching, transgranular cracks in high-residual-stress zone from tube expansion. No significant pitting or general corrosion.',
+ stem:'Which mechanism is responsible, and which material substitution is most effective for recurrence prevention?',
+ opts:[
+  {l:'A',x:'Pitting corrosion under stress — increase Mo content with 317L'},
+  {l:'B',x:'Intergranular corrosion from sensitization — solution anneal and requench'},
+  {l:'C',x:'Chloride stress corrosion cracking — switch to duplex 2205 or super-austenitic 6Mo for superior Cl-SCC resistance',c:1},
+  {l:'D',x:'Hydrogen embrittlement from cathodic reactions — apply anodic protection'}],
+ rat:'Cl-SCC requires three simultaneous conditions: susceptible material (austenitic SS), chloride at elevated temperature (>~50°C), and sustained tensile stress. All three present: 316L, 350 ppm Cl⁻ at 90°C, residual tensile stress from expansion. Fine branching transgranular morphology is the hallmark of Cl-SCC. 316L has improved pitting resistance (Mo) but is NOT immune to Cl-SCC. Duplex 2205 has far superior Cl-SCC resistance due to its duplex microstructure. Solution anneal (B) addresses sensitization (intergranular dissolution) — not transgranular Cl-SCC.',
+ clue:'Fine branching transgranular cracks + 316L + chloride + elevated T + tensile stress = Cl-SCC. Three simultaneous conditions, all present.',
+ trap:'Answer A (pitting → 317L): Mo addition improves pitting resistance but does NOT fundamentally fix SCC susceptibility. The branching transgranular morphology identifies Cl-SCC, not pitting.',
+ chain:['316L + 350 ppm Cl⁻ + 90°C + residual stress','All three SCC conditions present','Transgranular branching = Cl-SCC morphology','Mo (317L) improves pitting, not SCC','Duplex 2205 → superior SCC resistance'],
+ lens:'Pitting resistance (Mo-driven) vs. SCC resistance (microstructure-driven). Branching transgranular cracks vs. hemispherical pits — morphology is the discriminator.',
+ think:'Branching transgranular cracks + chloride + stress + temperature = Cl-SCC. Fix is microstructure change (duplex) or alloy upgrade.'},
+
+{id:'e4',t:'emb',d:'e',pts:120,sec:60,
+ tags:['Embrittlement','LME','Expert'],
+ ctx:'High-strength steel bracket (Fy = 550 MPa, cold-bent during fabrication) hot-dip galvanized at 455°C. Bracket fractures catastrophically during immersion in the zinc bath. Fracture: intergranular, instantaneous, at the inside bend radius.',
+ stem:'Which mechanism caused this failure, and which preventive measure should be specified?',
+ opts:[
+  {l:'A',x:'Hydrogen embrittlement from galvanizing flux — use dry flux and bake after galvanizing'},
+  {l:'B',x:'Thermal shock from 455°C — preheat bracket before bath immersion'},
+  {l:'C',x:'Liquid metal embrittlement — molten zinc penetrates grain boundaries under residual tensile stress; stress relieve before galvanizing',c:1},
+  {l:'D',x:'475°C embrittlement from zinc diffusing into the steel'}],
+ rat:'Liquid metal embrittlement (LME) requires: (1) susceptible material (high-strength steel >~550 MPa), (2) tensile stress (residual from cold bending, maximum at inner bend radius), (3) contact with embrittling liquid metal (molten zinc at 455°C). All three present. Molten zinc reduces grain boundary cohesive energy → instantaneous intergranular fracture. LME is INSTANTANEOUS (distinguishes from HE = delayed hours to days). Prevention: stress relieve before galvanizing to relax cold-bending residual stresses; specify R/t ≥ 3 for bends.',
+ clue:'Instantaneous fracture ON CONTACT with molten zinc + residual stress at bend + intergranular = LME. Instantaneous timing is the definitive distinction from HE.',
+ trap:'Answer A (HE) is most common wrong answer. KEY distinction: LME = instant fracture during liquid metal contact. HE = delayed fracture (hours to days) after hydrogen introduction. Instant = LME.',
+ chain:['Cold bending → residual tensile stress at inner radius','Immersion in molten zinc (455°C)','All 3 LME conditions met','Zn penetrates grain boundaries','Instantaneous intergranular fracture'],
+ lens:'LME vs. HE: timing is everything. Instant = LME. Delayed (hours to days) = HE. Moment of fracture is the diagnostic discriminator.',
+ think:'Instant fracture in liquid metal contact = LME. Delayed fracture post-plating = HE.'},
+
+{id:'g1',t:'grain',d:'a',pts:75,sec:75,
+ tags:['Grain/Toughness','DBTT','Analysis'],
+ ctx:'Two batches of normalized 1040 steel with identical room-temperature tensile properties. Charpy at −20°C: Batch A (ASTM grain size #8, fine) = 45 J. Batch B (ASTM grain size #3, coarse) = 12 J.',
+ stem:'Which microstructural mechanism best explains the dramatic low-temperature toughness difference?',
+ opts:[
+  {l:'A',x:'Fine grains have higher dislocation density, increasing plastic energy absorption'},
+  {l:'B',x:'Fine grains provide more grain boundaries that impede cleavage crack propagation and lower the DBTT',c:1},
+  {l:'C',x:'Fine grains form more cementite at boundaries, physically blocking crack paths'},
+  {l:'D',x:'Coarse grains contain retained austenite that reduces low-temperature toughness'}],
+ rat:'Grain boundaries impede cleavage crack propagation in BCC metals. Cleavage cracks propagate along {100} planes; at each boundary the crack must re-nucleate on a new cleavage plane — requiring additional energy. Fine grains → more boundaries → more re-nucleation events → higher energy → higher toughness. Fine grain also lowers DBTT: the transition from ductile to brittle occurs at a lower temperature. Identical room-T properties confirm grain size is the isolated variable.',
+ clue:'Fine grain = more boundaries = more impedance to cleavage = lower DBTT = higher low-temperature toughness. Grain boundary re-nucleation energy is the mechanism.',
+ trap:'Answer A (dislocation density) is partially related but not the primary mechanism for cleavage propagation impedance at low temperature.',
+ chain:['Fine grain → more grain boundaries','Cleavage crack must re-nucleate at each boundary','More energy per unit crack extension','Higher CVN at low T','Lower DBTT'],
+ lens:'The test writer controls tensile properties (identical) to isolate grain size. The question asks specifically about LOW-temperature toughness — the DBTT mechanism.',
+ think:'Fine grain → lower DBTT → better low-T toughness. Mechanism: grain boundaries force cleavage re-nucleation.'},
+
+{id:'g2',t:'grain',d:'e',pts:120,sec:60,
+ tags:['Grain/Toughness','Welding','Expert'],
+ ctx:'A572 Gr.50 structural weld, service at −30°C. HAZ impact toughness: 14 J (required 27 J). HAZ grain size ASTM #2 near fusion line vs. #8 in base metal. Weld made with 3.2 kJ/mm heat input, no interpass temperature control.',
+ stem:'Which single process change most effectively prevents HAZ grain coarsening in future welds?',
+ opts:[
+  {l:'A',x:'Use lower-strength filler metal to reduce HAZ residual stress'},
+  {l:'B',x:'Perform post-weld stress relief at 620°C'},
+  {l:'C',x:'Reduce heat input to <1.5 kJ/mm and control interpass temperature ≤200°C',c:1},
+  {l:'D',x:'Increase preheat to 150°C to slow cooling and reduce martensite formation'}],
+ rat:'HAZ grain coarsening is caused by exposure to peak temperatures >1100°C (grain growth regime). Heat input controls both the peak temperature reached in the HAZ and the time above the grain growth threshold. High heat input (3.2 kJ/mm) maximizes both → ASTM #2 coarse grain → raised DBTT → 14 J at −30°C. Reducing heat input to <1.5 kJ/mm reduces thermal penetration and time above 1100°C → finer grain → lower DBTT. Stress relief cannot refine already-coarsened grains. Increasing preheat slows cooling → MORE time at grain-growth temperature → worsens coarsening.',
+ clue:'HAZ grain coarsening = time × temperature driven. Reduce heat input → reduce both. Stress relief cannot reverse coarsening. Preheat worsens it.',
+ trap:'Answer D (increase preheat) is wrong and counterproductive. Preheat slows cooling → INCREASES time above grain-growth temperature. Preheat prevents HAZ martensite — a different problem entirely.',
+ chain:['High heat input → high peak T + long time above 1100°C','Austenite grain coarsening in HAZ','Coarse grain → raised DBTT','DBTT above −30°C → brittle HAZ','Fix: reduce heat input'],
+ lens:'Non-obvious tradeoff: preheat helps prevent HAZ martensite but HURTS when grain coarsening and toughness are the concern. Correct direction (reduce heat input) is the opposite of "add heat = better weld."',
+ think:'HAZ grain coarsening = reduce heat input + control interpass T. Preheat can worsen it.'},
+
+{id:'m1',t:'ht',d:'a',pts:75,sec:75,
+ tags:['Heat Treatment','Residual Stress','Fatigue','Analysis'],
+ ctx:'Carburized 8620 gear: 60 HRC surface, passes static tests. Rotating bending fatigue fails at 40% of expected cycles. Surface residual stress: +190 MPa (tensile). Carburized parts normally exhibit compressive case residual stress.',
+ stem:'What most likely destroyed the expected compressive residual stress, and what single corrective measure is most effective?',
+ opts:[
+  {l:'A',x:'Insufficient case depth — increase carburizing time to deepen the compressive zone'},
+  {l:'B',x:'Over-tempering relaxed the martensitic case stresses — reduce tempering temperature'},
+  {l:'C',x:'Post-heat-treatment grinding introduced tensile residual stresses; apply shot peening to restore compression',c:1},
+  {l:'D',x:'Quench rate was too slow — use water quench to develop higher compressive stress'}],
+ rat:'Carburizing + quenching normally produces compressive residual stress in the case (martensite volumetric expansion constrained by core). Tensile +190 MPa means this state was reversed — almost certainly by post-heat-treatment grinding at the fillet. Abusive grinding introduces heat (grinding burn) and surface plastic deformation → tensile residual stresses at the exact initiation location. Shot peening is the standard corrective treatment: plastically deforms the surface → introduces compressive residual stresses → directly counteracts fatigue-initiating tensile stress. Hardness (60 HRC) unchanged — purely a residual stress problem.',
+ clue:'Carburized part with tensile surface stress = anomaly. Compressive state was reversed. Post-process grinding is the classic culprit. Shot peening is the targeted fix.',
+ trap:'Answer A (case depth) is tempting. But the measured tensile residual stress is direct evidence of the mechanism — case depth increase cannot fix a surface stress state reversed by grinding.',
+ chain:['Carburize + quench → compressive case (normal)','Post-treatment grinding → tensile stress introduced','Tensile stress adds to applied fatigue amplitude','Local stress exceeds Se → early failure','Shot peen → restore compressive stress'],
+ lens:'The residual stress measurement (+190 MPa tensile) is the smoking gun. Students who don\'t use this data point will chase case depth or quench rate.',
+ think:'Unexpected tensile surface stress on carburized part → post-process machining damage → shot peen to restore compression.'},
+
+{id:'m2',t:'hard',d:'a',pts:75,sec:75,
+ tags:['Hardenability','Oil vs Water','Analysis'],
+ ctx:'4140 shaft (50 mm dia.) must achieve 40 HRC minimum. Water quench: 48 HRC surface, 41 HRC core — 32% crack rate. Oil quench: 45 HRC surface, 42 HRC core — zero cracking.',
+ stem:'Which quench medium should be selected, and what is the correct engineering principle?',
+ opts:[
+  {l:'A',x:'Water quench — higher hardness (48 HRC) provides larger safety margin above 40 HRC minimum'},
+  {l:'B',x:'Oil quench — achieves required hardness (42 > 40 HRC) with zero cracking; use slowest quench that still meets spec',c:1},
+  {l:'C',x:'Water quench with immediate transfer to oil to arrest crack propagation'},
+  {l:'D',x:'Air quench — eliminates cracking entirely even if hardness is compromised'}],
+ rat:'Engineering principle: use the slowest quench medium that still achieves the required hardness and microstructure, to minimize thermal gradients, residual stress, distortion, and cracking risk. Oil delivers 42 HRC (above 40 HRC minimum) with zero cracking. Water delivers 48 HRC (also above minimum) but at 32% cracking — commercially unacceptable. The specification is a MINIMUM, not a target. Both media satisfy the minimum; only oil does so without cracking. 4140\'s high hardenability was designed specifically to enable oil quenching.',
+ clue:'Both media exceed 40 HRC minimum. Decision criterion is reliability (crack rate). Oil: 0% cracking. Water: 32%. Slowest acceptable quench = oil.',
+ trap:'"Higher hardness = bigger safety margin" is wrong reasoning when a 32% crack rate is the cost. The spec is a minimum — exceeding it does not justify scrap/failure rate.',
+ chain:['Both quenches exceed 40 HRC minimum','Water: 48 HRC + 32% cracking','Oil: 42 HRC + 0% cracking','Spec = minimum not a target maximum','Slowest acceptable quench = oil'],
+ lens:'PE principle: slowest acceptable quench that meets spec = correct answer. More severity than needed is wasteful and dangerous.',
+ think:'Both meet spec → choose by reliability. Slowest acceptable quench = oil quench for 4140.'}
+];
+
+/* ================================================================
+   STATE
+   ================================================================ */
+let cfg={diff:'f',topic:'all',n:5};
+let S={qs:[],i:0,score:0,streak:0,best:0,cor:0,wr:0,sk:0,
+       tLeft:0,tmr:null,done:false,missed:[],ts:{}};
+
+/* ================================================================
+   SCREEN MANAGEMENT
+   ================================================================ */
+function show(id){
+  document.getElementById('lobby').style.display='none';
+  document.getElementById('quiz').style.display='none';
+  document.getElementById('results').style.display='none';
+  const el=document.getElementById(id);
+  el.style.display=(id==='lobby')?'flex':'block';
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ================================================================
+   LOBBY CONTROLS
+   ================================================================ */
+function setDiff(d,el){
+  cfg.diff=d;
+  ['f','a','e'].forEach(x=>{
+    const e=document.getElementById('d'+x);
+    e.classList.toggle('on',x===d);
+  });
+}
+function setTopic(t,el){
+  cfg.topic=t;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+}
+function setN(n,el){
+  cfg.n=n;
+  document.querySelectorAll('.rb').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+function goLobby(){
+  clearInterval(S.tmr);
+  show('lobby');
+}
+
+/* ================================================================
+   START
+   ================================================================ */
+function startArena(){
+  const diffMap={f:'foundation',a:'analysis',e:'expert'};
+  let pool=BANK.filter(q=>{
+    const dm=(cfg.diff==='all')||(q.d===cfg.diff);
+    const tm=(cfg.topic==='all')||(q.t===cfg.topic);
+    return dm&&tm;
+  });
+  if(!pool.length) pool=[...BANK];
+  pool=shuf(pool);
+  const take=Math.min(cfg.n,pool.length);
+  S={qs:pool.slice(0,take),i:0,score:0,streak:0,best:0,
+     cor:0,wr:0,sk:0,tLeft:0,tmr:null,done:false,missed:[],ts:{}};
+  show('quiz');
+  renderQ();
+}
+
+function shuf(a){
+  const b=[...a];
+  for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}
+  return b;
+}
+
+/* ================================================================
+   RENDER QUESTION
+   ================================================================ */
+function renderQ(){
+  const q=S.qs[S.i];
+  const tot=S.qs.length;
+  S.done=false;
+
+  // reset
+  document.getElementById('fbp').innerHTML='';
+  document.getElementById('fbp').classList.remove('on');
+  document.getElementById('nxtbtn').style.display='none';
+  document.getElementById('skpbtn').style.display='block';
+
+  // topbar
+  document.getElementById('qnum').textContent=`${S.i+1}/${tot}`;
+  document.getElementById('qscore').textContent=S.score.toLocaleString();
+  document.getElementById('qstreak').textContent=S.streak;
+  document.getElementById('pfill').style.width=`${(S.i/tot)*100}%`;
+  document.getElementById('qbig').textContent=String(S.i+1).padStart(2,'0');
+
+  // tags
+  const te=document.getElementById('qtags');
+  te.innerHTML='';
+  q.tags.forEach(t=>{
+    const s=document.createElement('span');
+    s.className='tg '+tc(t);
+    s.textContent=t;
+    te.appendChild(s);
+  });
+
+  // context
+  const cx=document.getElementById('qctx');
+  if(q.ctx){cx.style.display='';document.getElementById('qctxt').textContent=q.ctx;}
+  else{cx.style.display='none';}
+
+  document.getElementById('qstem').textContent=q.stem;
+
+  // options
+  const og=document.getElementById('opts');
+  og.innerHTML='';
+  shuf(q.opts).forEach(opt=>{
+    const btn=document.createElement('button');
+    btn.className='opt';
+    btn.dataset.c=opt.c?'1':'0';
+    btn.innerHTML=`<span class="ol">${opt.l}</span><span>${opt.x}</span>`;
+    btn.addEventListener('click',function(){pick(this,opt,q);});
+    og.appendChild(btn);
+  });
+
+  startTimer(q);
+}
+
+function tc(t){
+  if(t.includes('Heat')||t.includes('PWHT')||t.includes('Distortion')||t.includes('Surface')||t.includes('Grain Ref')) return 'tg-ht';
+  if(t.includes('Failure')||t.includes('Fracture')||t.includes('DBTT')||t.includes('Fatigue')) return 'tg-fail';
+  if(t.includes('Embrittlement')||t.includes('SCC')||t.includes('LME')||t.includes('Hydrogen')||t.includes('Temper E')) return 'tg-emb';
+  if(t.includes('Hardenability')||t.includes('Oil')) return 'tg-hard';
+  if(t.includes('Grain')&&!t.includes('Ref')) return 'tg-grain';
+  if(t.includes('TTT')||t.includes('CCT')) return 'tg-ttt';
+  if(t.includes('Foundation')) return 'tg-f';
+  if(t.includes('Analysis')) return 'tg-a';
+  if(t.includes('Expert')) return 'tg-e';
+  return 'tg-ht';
+}
+
+/* ================================================================
+   TIMER
+   ================================================================ */
+function startTimer(q){
+  clearInterval(S.tmr);
+  const max=q.sec||90;
+  S.tLeft=max;
+  updTimer(max,max);
+  S.tmr=setInterval(()=>{
+    S.tLeft--;
+    updTimer(S.tLeft,max);
+    if(S.tLeft<=0){clearInterval(S.tmr);timeUp(q);}
+  },1000);
+}
+function updTimer(t,max){
+  document.getElementById('tnum').textContent=t;
+  const circ=2*Math.PI*16; // r=16 → ~100.5
+  const off=circ*(1-t/max);
+  const f=document.getElementById('tcirc');
+  f.style.strokeDashoffset=off;
+  f.style.stroke=t<=10?'#e07070':t<=20?'#d4a017':'var(--accent)';
+}
+function timeUp(q){
+  if(S.done)return;
+  S.done=true;S.sk++;S.streak=0;
+  document.getElementById('qstreak').textContent=0;
+  trackTopic(q.t,false);
+  S.missed.push({q,chosen:'(time expired)'});
+  const fl=document.createElement('div');fl.className='tuf';document.body.appendChild(fl);
+  setTimeout(()=>fl.remove(),520);
+  revealAll();
+  buildFB(q,false,0);
+  document.getElementById('nxtbtn').style.display='block';
+  document.getElementById('skpbtn').style.display='none';
+}
+
+/* ================================================================
+   ANSWER
+   ================================================================ */
+function pick(btn,opt,q){
+  if(S.done)return;
+  S.done=true;
+  clearInterval(S.tmr);
+  document.getElementById('skpbtn').style.display='none';
+
+  const right=!!opt.c;
+  let pts=0;
+
+  document.querySelectorAll('.opt').forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.c==='1') b.classList.add('correct');
+    else if(b===btn&&!right) b.classList.add('wrong');
+    else b.classList.add('dimmed');
+  });
+
+  trackTopic(q.t,right);
+
+  if(right){
+    const tb=Math.floor((S.tLeft/(q.sec||90))*20);
+    pts=q.pts+tb;
+    if(S.streak>=2) pts=Math.floor(pts*(1+S.streak*0.1));
+    S.score+=pts;S.cor++;S.streak++;
+    if(S.streak>S.best) S.best=S.streak;
+    ppop(btn,'+'+pts,'pos');
+  } else {
+    S.wr++;S.streak=0;
+    S.missed.push({q,chosen:opt.x});
+    ppop(btn,'✗','neg');
+  }
+  document.getElementById('qscore').textContent=S.score.toLocaleString();
+  document.getElementById('qstreak').textContent=S.streak;
+  buildFB(q,right,pts);
+  document.getElementById('nxtbtn').style.display='block';
+}
+
+function trackTopic(t,right){
+  if(!S.ts[t]) S.ts[t]={c:0,n:0};
+  S.ts[t].n++;
+  if(right) S.ts[t].c++;
+}
+
+function revealAll(){
+  document.querySelectorAll('.opt').forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.c==='1') b.classList.add('correct');
+    else b.classList.add('dimmed');
+  });
+}
+
+function ppop(btn,txt,cls){
+  const r=btn.getBoundingClientRect();
+  const el=document.createElement('div');
+  el.className='pp '+cls;
+  el.textContent=txt;
+  el.style.left=(r.left+r.width/2-22)+'px';
+  el.style.top=(r.top+window.scrollY-14)+'px';
+  document.body.appendChild(el);
+  setTimeout(()=>el.remove(),950);
+}
+
+/* ================================================================
+   FEEDBACK
+   ================================================================ */
+function chainHTML(arr){
+  if(!arr||!arr.length)return'';
+  return arr.map((s,i)=>i===0
+    ?`<span class="cs">${s}</span>`
+    :`<span class="ca">→</span><span class="cs">${s}</span>`).join('');
+}
+
+function buildFB(q,right,pts){
+  const p=document.getElementById('fbp');
+  p.innerHTML=`
+    <div class="fbb ${right?'fc':'fw'}">
+      <span class="fbi">${right?'✓':'✗'}</span>
+      <span class="fbt">${right?'CORRECT — WELL REASONED':'INCORRECT — STUDY THE RATIONALE'}</span>
+      ${right?`<span class="fbpts">+${pts} pts</span>`:''}
+    </div>
+    <div class="fbd">
+      <div class="fbs">
+        <div class="fbl ${right?'lg':'lr'}">${right?'Why This Is Correct':'Correct Answer &amp; Rationale'}</div>
+        <div class="ft ${right?'ftg':'ftr'}">${q.rat}</div>
+      </div>
+      <div class="fbs">
+        <div class="fbl lo">🔑 Key Clue</div>
+        <div class="ft fto">${q.clue}</div>
+      </div>
+      ${q.chain?`<div class="fbs">
+        <div class="fbl lb2">Concept Chain</div>
+        <div class="ft ftb"><div class="cf">${chainHTML(q.chain)}</div></div>
+      </div>`:''}
+      <div class="fbs">
+        <div class="fbl lo">⚠ PE Trap Alert</div>
+        <div class="ft fto">${q.trap}</div>
+      </div>
+      <div class="fbs">
+        <div class="fbl lp">🔬 Designer's Lens</div>
+        <div class="ft ftp">${q.lens}</div>
+      </div>
+      <div class="fbs">
+        <div class="fbl lt">→ How to Think Next Time</div>
+        <div class="ft ftn">${q.think}</div>
+      </div>
+    </div>`;
+  p.classList.add('on');
+  setTimeout(()=>p.scrollIntoView({behavior:'smooth',block:'nearest'}),120);
+}
+
+/* ================================================================
+   NAVIGATION
+   ================================================================ */
+function nextQ(){
+  S.i++;
+  if(S.i>=S.qs.length){showResults();return;}
+  document.getElementById('fbp').innerHTML='';
+  document.getElementById('fbp').classList.remove('on');
+  renderQ();
+  window.scrollTo({top:document.querySelector('.qtb').getBoundingClientRect().top+window.scrollY-54,behavior:'smooth'});
+}
+
+function skipQ(){
+  if(S.done)return;
+  clearInterval(S.tmr);
+  S.done=true;S.sk++;S.streak=0;
+  document.getElementById('qstreak').textContent=0;
+  const q=S.qs[S.i];
+  S.missed.push({q,chosen:'(skipped)'});
+  trackTopic(q.t,false);
+  revealAll();
+  buildFB(q,false,0);
+  document.getElementById('nxtbtn').style.display='block';
+  document.getElementById('skpbtn').style.display='none';
+}
+
+/* ================================================================
+   RESULTS
+   ================================================================ */
+const TN={ht:'Heat Treatment',fail:'Failure Analysis',emb:'Embrittlement',hard:'Hardenability',ttt:'TTT/CCT',grain:'Grain/Toughness'};
+const TC={ht:'#3d6b9e',fail:'#c0392b',emb:'#7c4dbd',hard:'#e07020',ttt:'#1a9e8a',grain:'#d4a017'};
+
+function showResults(){
+  clearInterval(S.tmr);
+  const tot=S.qs.length;
+  const pct=tot>0?S.cor/tot:0;
+  let grade,verdict;
+  if(pct>=.9){grade='A';verdict='PE-READY PERFORMANCE';}
+  else if(pct>=.8){grade='B';verdict='STRONG COMMAND';}
+  else if(pct>=.7){grade='C';verdict='SOLID FOUNDATION';}
+  else if(pct>=.5){grade='D';verdict='NEEDS REINFORCEMENT';}
+  else{grade='F';verdict='RETURN TO CONCEPT STUDY';}
+
+  document.getElementById('rgrade').textContent=grade;
+  document.getElementById('rgrade').className='rg g'+grade;
+  document.getElementById('rverdict').textContent=verdict;
+  document.getElementById('rsub').textContent=
+    `${S.cor} / ${tot} Correct  ·  ${S.score.toLocaleString()} pts  ·  Best Streak: ${S.best}`;
+
+  // stats
+  document.getElementById('strow').innerHTML=[
+    {v:S.cor,l:'Correct'},{v:S.wr,l:'Wrong'},
+    {v:S.sk,l:'Skipped'},{v:S.best+'🔥',l:'Best Streak'}
+  ].map((s,i)=>`<div class="stb" style="animation-delay:${i*.08}s">
+    <div class="sv2">${s.v}</div><div class="sl2">${s.l}</div></div>`).join('');
+
+  // badges
+  const badges=[
+    {i:'⚡',l:'Speed Demon',on:S.sk===0&&S.tLeft>20&&S.cor>1},
+    {i:'🔥',l:'Hot Streak',on:S.best>=4},
+    {i:'🎯',l:'Sharpshooter',on:pct>=.9},
+    {i:'📐',l:'PE Ready',on:pct>=.8&&tot>=8},
+    {i:'💡',l:'No Skips',on:S.sk===0},
+  ];
+  document.getElementById('brow').innerHTML=badges.map(b=>
+    `<div class="bdg ${b.on?'on':''}"><span class="bi">${b.i}</span><span class="bl">${b.l}</span></div>`
+  ).join('');
+
+  // breakdown
+  const bd=document.getElementById('bdrows');
+  bd.innerHTML='';
+  const ents=Object.entries(S.ts);
+  if(ents.length){
+    ents.forEach(([tp,{c,n}])=>{
+      const p=n>0?Math.round(c/n*100):0;
+      bd.innerHTML+=`<div class="bdr">
+        <span class="bdn">${TN[tp]||tp}</span>
+        <div class="bdtr"><div class="bdf" style="width:${p}%;background:${TC[tp]||'#5aa0e0'}"></div></div>
+        <span class="bdp">${p}%</span>
+      </div>`;
+    });
+  } else {
+    bd.innerHTML='<p style="color:rgba(255,255,255,.35);font-family:\'JetBrains Mono\',monospace;font-size:.75rem">No topic data</p>';
+  }
+
+  // missed
+  const ms=document.getElementById('mssec');
+  if(S.missed.length>0){
+    ms.style.display='';
+    document.getElementById('mslist').innerHTML=S.missed.map(({q,chosen})=>`
+      <div class="mi">
+        <div class="miq">${q.stem.slice(0,130)}${q.stem.length>130?'…':''}</div>
+        <div class="miw">✗ ${chosen.slice(0,90)}</div>
+        <div class="mia">✓ ${(q.opts.find(o=>o.c)||{x:''}).x.slice(0,90)}</div>
+      </div>`).join('');
+  } else {
+    ms.style.display='none';
+  }
+
+  show('results');
+}
+
+function retryMissed(){
+  if(!S.missed.length){startArena();return;}
+  const qs=shuf(S.missed.map(m=>m.q));
+  S={qs,i:0,score:0,streak:0,best:0,cor:0,wr:0,sk:0,
+     tLeft:0,tmr:null,done:false,missed:[],ts:{}};
+  show('quiz');
+  renderQ();
+}
+
+// init
+show('lobby');
+</script>
+</body>
+</html>
